@@ -1,31 +1,50 @@
-# PHP/MySQL login page created from the PDFs
+# Pomiary biomedyczne PHP/MySQL
 
-This small project combines the examples shown in the uploaded presentations:
+Prosta aplikacja studencka w PHP, HTML i CSS do zapisywania pomiarów biomedycznych zalogowanego użytkownika.
 
-- MySQL `users` table with `user_id`, `user_fullname`, `user_email`, and `user_passwordhash`.
-- Registration form and registration handler.
-- Login form and login handler using `password_verify()`.
-- PHP session-based logged-in state.
-- Logout page using `session_unset()` and `session_destroy()`.
+## Funkcje
 
-## Files
+- rejestracja użytkownika,
+- logowanie e-mailem i hasłem zapisanym przez `password_hash()`,
+- zapis udanych i nieudanych prób logowania z datą oraz adresem IP,
+- zmiana hasła po zalogowaniu,
+- reset hasła przez pytanie pomocnicze,
+- lista, dodawanie i edycja jednostek biomedycznych,
+- katalog mierzonych parametrów z autorem wpisu,
+- limit 5 własnych pozycji katalogowych na użytkownika,
+- dodawanie pomiarów z ręcznie ustawianą datą i godziną,
+- przeglądanie wszystkich zapisów jednego parametru.
 
-- `schema.sql` — creates the `users` table.
-- `config.php` — database connection and helper functions.
-- `index.php` — landing page.
-- `register.php` — registration page.
-- `login.php` — login page.
-- `dashboard.php` — protected logged-in page.
-- `logout.php` — logout page.
-- `style.css` — basic styling.
+## Obsługiwane parametry startowe
 
-## Setup
+- temperatura ciała,
+- ciśnienie krwi,
+- waga,
+- poziom witaminy D3.
 
-1. Upload the files to a PHP-enabled server.
-2. Import `schema.sql` in phpMyAdmin or run it in MySQL.
-3. Edit `config.php` and set your real database credentials.
-4. Open `index.php` in the browser.
+## Pliki
 
-## Notes
+- `schema.sql` - tworzy tabele i dodaje podstawowe jednostki oraz parametry,
+- `config.php` - połączenie z bazą i funkcje pomocnicze,
+- `index.php` - strona startowa,
+- `register.php` - rejestracja,
+- `login.php` - logowanie,
+- `change_password.php` - zmiana hasła,
+- `reset_password.php` - reset hasła,
+- `dashboard.php` - panel pomiarów,
+- `units.php` - zarządzanie jednostkami,
+- `measurement_types.php` - zarządzanie katalogiem badań,
+- `measurements.php` - zapisy jednego parametru,
+- `logout.php` - wylogowanie,
+- `style.css` - proste style.
 
-The lecture slides used `mysqli_*` and hard-coded example credentials. This version keeps the same idea but uses PDO prepared statements, does not include real credentials, and validates e-mail/password input.
+## Uruchomienie
+
+1. Wgraj pliki na serwer z PHP i MySQL.
+2. Zaimportuj `schema.sql` w phpMyAdmin albo bezpośrednio w MySQL.
+3. Ustaw dane bazy w `config.php`.
+4. Otwórz `index.php` w przeglądarce.
+
+Sprawozdanie należy umieścić w głównym folderze projektu, a plik musi się nazywać `Sprawozdanie.pdf`.
+
+Na koniec można usunąć folder .git.

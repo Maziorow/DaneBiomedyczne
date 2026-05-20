@@ -1,15 +1,18 @@
-<?php
+﻿<?php
 require_once __DIR__ . '/config.php';
 start_session();
 
 $errors = [];
 $name = '';
 $email = '';
+$resetQuestion = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $name = trim($_POST['name'] ?? '');
     $email = trim($_POST['email'] ?? '');
     $password = $_POST['password'] ?? '';
+    $resetQuestion = trim($_POST['reset_question'] ?? '');
+    $resetAnswer = trim($_POST['reset_answer'] ?? '');
 
     if ($name === '') {
         $errors[] = 'Podaj imię i nazwisko.';
@@ -23,16 +26,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $errors[] = 'Hasło musi mieć co najmniej 8 znaków.';
     }
 
+    if (strlen($resetQuestion) < 3) {
+        $errors[] = 'Podaj pytanie pomocnicze.';
+    }
+
+    if (strlen($resetAnswer) < 2) {
+        $errors[] = 'Podaj odpowiedź pomocniczą.';
+    }
+
     if (!$errors) {
         try {
-            $passwordHash = password_hash($password, PASSWORD_DEFAULT);
             $stmt = db()->prepare(
-                'INSERT INTO users (user_fullname, user_email, user_passwordhash) VALUES (:name, :email, :hash)'
+                'INSERT INTO users
+                 (user_fullname, user_email, user_passwordhash, reset_question, reset_answer_hash)
+                 VALUES (:name, :email, :password_hash, :reset_question, :reset_answer_hash)'
             );
             $stmt->execute([
                 ':name' => $name,
                 ':email' => $email,
-                ':hash' => $passwordHash,
+                ':password_hash' => password_hash($password, PASSWORD_DEFAULT),
+                ':reset_question' => $resetQuestion,
+                ':reset_answer_hash' => password_hash(strtolower($resetAnswer), PASSWORD_DEFAULT),
             ]);
 
             header('Location: login.php?registered=1');
@@ -72,6 +86,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             <label for="password">Hasło</label>
             <input type="password" id="password" name="password" required minlength="8">
+
+            <label for="reset_question">Pytanie pomocnicze do resetu hasła</label>
+            <input type="text" id="reset_question" name="reset_question" value="<?= e($resetQuestion) ?>" required>
+
+            <label for="reset_answer">Odpowiedź pomocnicza</label>
+            <input type="password" id="reset_answer" name="reset_answer" required>
 
             <button class="button" type="submit">Zarejestruj</button>
             <a class="button secondary" href="login.php">Mam już konto</a>
