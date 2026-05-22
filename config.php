@@ -89,6 +89,115 @@ function save_measurement(int $userId, int $typeId, string $valuePrimary, ?strin
     ]);
 }
 
+function get_norm_for_type(int $typeId, ?int $userId = null): ?array
+{
+    if ($userId !== null) {
+        $stmt = db()->prepare(
+            'SELECT *
+             FROM measurement_norms
+             WHERE type_id = :type_id
+               AND (created_by_user_id = :user_id_filter OR created_by_user_id IS NULL)
+             ORDER BY CASE WHEN created_by_user_id = :user_id_order THEN 0 ELSE 1 END, norm_id DESC
+             LIMIT 1'
+        );
+        $stmt->execute([
+            ':type_id' => $typeId,
+            ':user_id_filter' => $userId,
+            ':user_id_order' => $userId,
+        ]);
+    } else {
+        $stmt = db()->prepare(
+            'SELECT *
+             FROM measurement_norms
+             WHERE type_id = :type_id AND created_by_user_id IS NULL
+             ORDER BY norm_id DESC
+             LIMIT 1'
+        );
+        $stmt->execute([':type_id' => $typeId]);
+    }
+
+    $norm = $stmt->fetch();
+
+    return $norm ?: null;
+}
+
+function save_user_norm(int $typeId, int $userId, ?string $minValue, ?string $maxValue, string $source): void
+{
+    $minValue = $minValue !== null && trim($minValue) !== '' ? trim($minValue) : null;
+    $maxValue = $maxValue !== null && trim($maxValue) !== '' ? trim($maxValue) : null;
+    $source = trim($source);
+
+    $stmt = db()->prepare(
+        'DELETE FROM measurement_norms
+         WHERE type_id = :type_id AND created_by_user_id = :user_id'
+    );
+    $stmt->execute([
+        ':type_id' => $typeId,
+        ':user_id' => $userId,
+    ]);
+
+    if ($minValue === null && $maxValue === null) {
+        return;
+    }
+
+    $stmt = db()->prepare(
+        'INSERT INTO measurement_norms (type_id, min_value, max_value, source, created_by_user_id)
+         VALUES (:type_id, :min_value, :max_value, :source, :user_id)'
+    );
+    $stmt->execute([
+        ':type_id' => $typeId,
+        ':min_value' => $minValue,
+        ':max_value' => $maxValue,
+        ':source' => $source !== '' ? $source : null,
+        ':user_id' => $userId,
+    ]);
+}
+
+function measurement_norm_status(string $value, ?array $norm): array
+{
+    if (!$norm) {
+        return ['label' => 'Brak normy', 'class' => 'status-missing', 'outside' => false];
+    }
+
+    $number = (float) $value;
+    $min = $norm['min_value'] !== null ? (float) $norm['min_value'] : null;
+    $max = $norm['max_value'] !== null ? (float) $norm['max_value'] : null;
+
+    if ($min !== null && $number < $min) {
+        return ['label' => 'Poniżej normy', 'class' => 'status-low', 'outside' => true];
+    }
+
+    if ($max !== null && $number > $max) {
+        return ['label' => 'Powyżej normy', 'class' => 'status-high', 'outside' => true];
+    }
+
+    return ['label' => 'W normie', 'class' => 'status-ok', 'outside' => false];
+}
+
+function format_norm(?array $norm, string $unitSymbol): string
+{
+    if (!$norm) {
+        return 'Brak normy';
+    }
+
+    $min = $norm['min_value'];
+    $max = $norm['max_value'];
+
+    if ($min !== null && $max !== null) {
+        return e($min) . ' - ' . e($max) . ' ' . e($unitSymbol);
+    }
+
+    if ($min !== null) {
+        return 'od ' . e($min) . ' ' . e($unitSymbol);
+    }
+
+    if ($max !== null) {
+        return 'do ' . e($max) . ' ' . e($unitSymbol);
+    }
+
+    return 'Brak normy';
+}
+
 function format_value(array $row): string
 {
     return e($row['value_primary']) . ' ' . e($row['unit_symbol']);

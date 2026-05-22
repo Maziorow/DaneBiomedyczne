@@ -51,4 +51,8 @@ th { background: #f3f6f4; }
 .error { background: #ffe6e6; color: #8a0000; }
 .success { background: #e7f7e7; color: #0b621c; }
 .code-note { font-family: Consolas, monospace; background: #f7f7f7; padding: 12px; border-radius: 8px; overflow-x: auto; }
+.status { display: inline-block; padding: 4px 8px; border-radius: 8px; font-size: 0.9rem; }
+.status-ok { background: #e7f7e7; color: #0b621c; }
+.status-low, .status-high { background: #ffe6e6; color: #8a0000; }
+.status-missing { background: #f1f1f1; color: #555; }
 footer { text-align: center; padding: 24px; color: #667; }

@@ -57,6 +57,22 @@ CREATE TABLE IF NOT EXISTS measurements (
     FOREIGN KEY (type_id) REFERENCES measurement_types(type_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+CREATE TABLE IF NOT EXISTS measurement_norms (
+  norm_id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  type_id INT UNSIGNED NOT NULL,
+  min_value DECIMAL(8,2) NULL,
+  max_value DECIMAL(8,2) NULL,
+  source VARCHAR(255) NULL,
+  created_by_user_id INT UNSIGNED NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_measurement_norms_type
+    FOREIGN KEY (type_id) REFERENCES measurement_types(type_id)
+    ON DELETE CASCADE,
+  CONSTRAINT fk_measurement_norms_user
+    FOREIGN KEY (created_by_user_id) REFERENCES users(user_id)
+    ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 INSERT INTO biomedical_units (unit_id, unit_name, unit_symbol) VALUES
 (1, 'Stopnie Celsjusza', '°C'),
 (2, 'Milimetry słupa rtęci', 'mmHg'),
@@ -79,3 +95,15 @@ ON DUPLICATE KEY UPDATE
   has_second_value = VALUES(has_second_value),
   value_label = VALUES(value_label),
   second_value_label = VALUES(second_value_label);
+
+INSERT INTO measurement_norms (type_id, min_value, max_value, source, created_by_user_id)
+SELECT 1, 36.10, 37.20, 'Mayo Clinic: https://www.mayoclinic.org/first-aid/first-aid-fever/basics/art-20056685', NULL
+WHERE NOT EXISTS (SELECT 1 FROM measurement_norms WHERE type_id = 1 AND created_by_user_id IS NULL);
+
+INSERT INTO measurement_norms (type_id, min_value, max_value, source, created_by_user_id)
+SELECT 2, 90.00, 120.00, 'American Heart Association: https://www.heart.org/en/health-topics/high-blood-pressure/understanding-blood-pressure-readings', NULL
+WHERE NOT EXISTS (SELECT 1 FROM measurement_norms WHERE type_id = 2 AND created_by_user_id IS NULL);
+
+INSERT INTO measurement_norms (type_id, min_value, max_value, source, created_by_user_id)
+SELECT 4, 20.00, 50.00, 'NIH Office of Dietary Supplements: https://ods.od.nih.gov/factsheets/VitaminD-HealthProfessional/', NULL
+WHERE NOT EXISTS (SELECT 1 FROM measurement_norms WHERE type_id = 4 AND created_by_user_id IS NULL);
