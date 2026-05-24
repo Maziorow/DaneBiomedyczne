@@ -25,7 +25,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if (!$errors) {
-        save_measurement((int) $_SESSION['current_user'], $typeId, $valuePrimary, null, $date->format('Y-m-d H:i:s'));
+        save_measurement((int) $_SESSION['current_user'], $typeId, $valuePrimary, $date->format('Y-m-d H:i:s'));
         header('Location: dashboard.php?added=1');
         exit;
     }

@@ -74,17 +74,16 @@ function get_measurement_type(int $typeId): ?array
     return $type ?: null;
 }
 
-function save_measurement(int $userId, int $typeId, string $valuePrimary, ?string $valueSecondary, string $measuredAt): void
+function save_measurement(int $userId, int $typeId, string $valuePrimary, string $measuredAt): void
 {
     $stmt = db()->prepare(
-        'INSERT INTO measurements (user_id, type_id, value_primary, value_secondary, measured_at)
-         VALUES (:user_id, :type_id, :value_primary, :value_secondary, :measured_at)'
+        'INSERT INTO measurements (user_id, type_id, value_primary, measured_at)
+         VALUES (:user_id, :type_id, :value_primary, :measured_at)'
     );
     $stmt->execute([
         ':user_id' => $userId,
         ':type_id' => $typeId,
         ':value_primary' => $valuePrimary,
-        ':value_secondary' => $valueSecondary,
         ':measured_at' => $measuredAt,
     ]);
 }

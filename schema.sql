@@ -47,7 +47,6 @@ CREATE TABLE IF NOT EXISTS measurements (
   user_id INT UNSIGNED NOT NULL,
   type_id INT UNSIGNED NOT NULL,
   value_primary DECIMAL(8,2) NOT NULL,
-  value_secondary DECIMAL(8,2) NULL,
   measured_at DATETIME NOT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   CONSTRAINT fk_measurements_user

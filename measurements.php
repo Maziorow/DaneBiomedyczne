@@ -70,7 +70,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if (!$errors) {
-        save_measurement($currentUserId, $typeId, $valuePrimary, null, $date->format('Y-m-d H:i:s'));
+        save_measurement($currentUserId, $typeId, $valuePrimary, $date->format('Y-m-d H:i:s'));
         header('Location: measurements.php?type_id=' . $typeId . '&added=1');
         exit;
     }
