@@ -7,9 +7,8 @@ $success = '';
 $editUnit = null;
 
 if (isset($_GET['edit_id'])) {
-    $stmt = db()->prepare('SELECT * FROM biomedical_units WHERE unit_id = :unit_id');
-    $stmt->execute([':unit_id' => (int) $_GET['edit_id']]);
-    $editUnit = $stmt->fetch() ?: null;
+    $editId = (int) $_GET['edit_id'];
+    $editUnit = db_fetch_one('SELECT * FROM biomedical_units WHERE unit_id = ' . $editId);
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -27,39 +26,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if (!$errors) {
-        try {
-            if ($action === 'update' && $unitId > 0) {
-                $stmt = db()->prepare(
-                    'UPDATE biomedical_units
-                     SET unit_name = :unit_name, unit_symbol = :unit_symbol
-                     WHERE unit_id = :unit_id'
-                );
-                $stmt->execute([
-                    ':unit_name' => $unitName,
-                    ':unit_symbol' => $unitSymbol,
-                    ':unit_id' => $unitId,
-                ]);
+        $unitNameSql = mysqli_real_escape_string(db(), $unitName);
+        $unitSymbolSql = mysqli_real_escape_string(db(), $unitSymbol);
+
+        if ($action === 'update' && $unitId > 0) {
+            $sql = "UPDATE biomedical_units
+                    SET unit_name = '$unitNameSql', unit_symbol = '$unitSymbolSql'
+                    WHERE unit_id = $unitId";
+            $result = mysqli_query(db(), $sql);
+
+            if ($result) {
                 header('Location: units.php?updated=1');
                 exit;
             }
+        } else {
+            $sql = "INSERT INTO biomedical_units (unit_name, unit_symbol)
+                    VALUES ('$unitNameSql', '$unitSymbolSql')";
+            $result = mysqli_query(db(), $sql);
 
-            $stmt = db()->prepare(
-                'INSERT INTO biomedical_units (unit_name, unit_symbol)
-                 VALUES (:unit_name, :unit_symbol)'
-            );
-            $stmt->execute([
-                ':unit_name' => $unitName,
-                ':unit_symbol' => $unitSymbol,
-            ]);
-            header('Location: units.php?added=1');
-            exit;
-        } catch (PDOException $e) {
-            if ($e->getCode() === '23000') {
-                $errors[] = 'Jednostka z takim symbolem już istnieje.';
-            } else {
-                $errors[] = 'Wystąpił błąd podczas zapisu jednostki.';
+            if ($result) {
+                header('Location: units.php?added=1');
+                exit;
             }
         }
+
+        $errors[] = 'Błąd: ' . $sql . ' ' . mysqli_error(db());
     }
 }
 
@@ -70,7 +61,7 @@ if (isset($_GET['updated'])) {
     $success = 'Jednostka została zaktualizowana.';
 }
 
-$units = db()->query('SELECT * FROM biomedical_units ORDER BY unit_id')->fetchAll();
+$units = db_fetch_all('SELECT * FROM biomedical_units ORDER BY unit_id');
 ?>
 <!doctype html>
 <html lang="pl">

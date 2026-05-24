@@ -35,9 +35,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if (!$errors) {
-        save_user_norm($typeId, $currentUserId, $normMin, $normMax, $normSource);
-        header('Location: measurement_types.php?norm_updated=1');
-        exit;
+        if (save_user_norm($typeId, $currentUserId, $normMin, $normMax, $normSource)) {
+            header('Location: measurement_types.php?norm_updated=1');
+            exit;
+        }
+
+        $errors[] = 'Błąd zapisu normy: ' . mysqli_error(db());
     }
 }
 ?>

@@ -17,20 +17,18 @@ $editMeasurement = null;
 $norm = get_norm_for_type($typeId, $currentUserId);
 
 if (isset($_GET['delete_id'])) {
-    $stmt = db()->prepare(
-        'DELETE FROM measurements
-         WHERE measurement_id = :measurement_id
-           AND user_id = :user_id
-           AND type_id = :type_id'
-    );
-    $stmt->execute([
-        ':measurement_id' => (int) $_GET['delete_id'],
-        ':user_id' => $currentUserId,
-        ':type_id' => $typeId,
-    ]);
+    $deleteId = (int) $_GET['delete_id'];
+    $sql = 'DELETE FROM measurements
+            WHERE measurement_id = ' . $deleteId . '
+              AND user_id = ' . $currentUserId . '
+              AND type_id = ' . $typeId;
 
-    header('Location: measurements.php?type_id=' . $typeId . '&deleted=1');
-    exit;
+    if (mysqli_query(db(), $sql)) {
+        header('Location: measurements.php?type_id=' . $typeId . '&deleted=1');
+        exit;
+    }
+
+    $errors[] = 'Błąd: ' . $sql . ' ' . mysqli_error(db());
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -50,61 +48,60 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 # edycja pomiaru
     if (!$errors && $action === 'update' && $measurementId > 0) {
-        $stmt = db()->prepare(
-            'UPDATE measurements
-             SET value_primary = :value_primary, measured_at = :measured_at
-             WHERE measurement_id = :measurement_id
-               AND user_id = :user_id
-               AND type_id = :type_id'
-        );
-        $stmt->execute([
-            ':value_primary' => $valuePrimary,
-            ':measured_at' => $date->format('Y-m-d H:i:s'),
-            ':measurement_id' => $measurementId,
-            ':user_id' => $currentUserId,
-            ':type_id' => $typeId,
-        ]);
+        $valuePrimarySql = mysqli_real_escape_string(db(), $valuePrimary);
+        $measuredAtSql = mysqli_real_escape_string(db(), $date->format('Y-m-d H:i:s'));
 
-        header('Location: measurements.php?type_id=' . $typeId . '&updated=1');
-        exit;
+        $sql = 'UPDATE measurements
+                SET value_primary = \'' . $valuePrimarySql . '\', measured_at = \'' . $measuredAtSql . '\'
+                WHERE measurement_id = ' . $measurementId . '
+                  AND user_id = ' . $currentUserId . '
+                  AND type_id = ' . $typeId;
+
+        if (mysqli_query(db(), $sql)) {
+            header('Location: measurements.php?type_id=' . $typeId . '&updated=1');
+            exit;
+        }
+
+        $errors[] = 'Błąd: ' . $sql . ' ' . mysqli_error(db());
     }
 
     if (!$errors) {
-        save_measurement($currentUserId, $typeId, $valuePrimary, $date->format('Y-m-d H:i:s'));
-        header('Location: measurements.php?type_id=' . $typeId . '&added=1');
-        exit;
+        if (save_measurement($currentUserId, $typeId, $valuePrimary, $date->format('Y-m-d H:i:s'))) {
+            header('Location: measurements.php?type_id=' . $typeId . '&added=1');
+            exit;
+        }
+
+        $errors[] = 'Błąd zapisu pomiaru: ' . mysqli_error(db());
     }
 }
 
 if (isset($_GET['edit_id'])) {
-    $stmt = db()->prepare(
+    $editId = (int) $_GET['edit_id'];
+    $editMeasurement = db_fetch_one(
         'SELECT *
          FROM measurements
-         WHERE measurement_id = :measurement_id
-           AND user_id = :user_id
-           AND type_id = :type_id'
+         WHERE measurement_id = ' . $editId . '
+           AND user_id = ' . $currentUserId . '
+           AND type_id = ' . $typeId
     );
-    $stmt->execute([
-        ':measurement_id' => (int) $_GET['edit_id'],
-        ':user_id' => $currentUserId,
-        ':type_id' => $typeId,
-    ]);
-    $editMeasurement = $stmt->fetch() ?: null;
 }
 
-$stmt = db()->prepare(
+$measuredAtValue = date('Y-m-d\TH:i');
+if ($editMeasurement) {
+    $editDate = DateTime::createFromFormat('Y-m-d H:i:s', $editMeasurement['measured_at']);
+    if ($editDate) {
+        $measuredAtValue = $editDate->format('Y-m-d\TH:i');
+    }
+}
+
+$measurements = db_fetch_all(
     'SELECT m.*, mt.type_name, mt.has_second_value, bu.unit_symbol
      FROM measurements m
      JOIN measurement_types mt ON mt.type_id = m.type_id
      JOIN biomedical_units bu ON bu.unit_id = mt.unit_id
-     WHERE m.user_id = :user_id AND m.type_id = :type_id
+     WHERE m.user_id = ' . $currentUserId . ' AND m.type_id = ' . $typeId . '
      ORDER BY m.measured_at DESC'
 );
-$stmt->execute([
-    ':user_id' => $currentUserId,
-    ':type_id' => $typeId,
-]);
-$measurements = $stmt->fetchAll();
 
 $dateFrom = trim($_GET['date_from'] ?? '');
 $dateTo = trim($_GET['date_to'] ?? '');
@@ -121,21 +118,14 @@ if ($dateFrom !== '' || $dateTo !== '') {
     } elseif ($fromDate > $toDate) {
         $statErrors[] = 'Data od nie moze byc pozniejsza niz data do.';
     } else {
-        $stmt = db()->prepare(
+        $statRows = db_fetch_all(
             'SELECT *
              FROM measurements
-             WHERE user_id = :user_id
-               AND type_id = :type_id
-               AND measured_at BETWEEN :date_from AND :date_to
+             WHERE user_id = ' . $currentUserId . '
+               AND type_id = ' . $typeId . '
+               AND measured_at BETWEEN \'' . $fromDate->format('Y-m-d 00:00:00') . '\' AND \'' . $toDate->format('Y-m-d 23:59:59') . '\'
              ORDER BY measured_at'
         );
-        $stmt->execute([
-            ':user_id' => $currentUserId,
-            ':type_id' => $typeId,
-            ':date_from' => $fromDate->format('Y-m-d 00:00:00'),
-            ':date_to' => $toDate->format('Y-m-d 23:59:59'),
-        ]);
-        $statRows = $stmt->fetchAll();
 
         if ($statRows) {
             $values = array_map('floatval', array_column($statRows, 'value_primary'));
@@ -215,7 +205,7 @@ if ($dateFrom !== '' || $dateTo !== '') {
 
             <label for="measured_at">Data i czas wykonania</label>
         <input type="datetime-local" id="measured_at" name="measured_at"
-            value="<?= e($measuredAtInput ?? ($editMeasurement ? date('Y-m-d\TH:i', strtotime($editMeasurement['measured_at'])) : date('Y-m-d\TH:i'))) ?>"
+            value="<?= e($measuredAtInput ?? $measuredAtValue) ?>"
             required>
 
             <button class="button" type="submit"><?= $editMeasurement ? 'Zapisz zmiany' : 'Zapisz' ?></button>

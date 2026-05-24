@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 require_once __DIR__ . '/config.php';
 start_session();
 
@@ -35,29 +35,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if (!$errors) {
-        try {
-            $stmt = db()->prepare(
-                'INSERT INTO users
-                 (user_fullname, user_email, user_passwordhash, reset_question, reset_answer_hash)
-                 VALUES (:name, :email, :password_hash, :reset_question, :reset_answer_hash)'
-            );
-            $stmt->execute([
-                ':name' => $name,
-                ':email' => $email,
-                ':password_hash' => password_hash($password, PASSWORD_DEFAULT),
-                ':reset_question' => $resetQuestion,
-                ':reset_answer_hash' => password_hash(strtolower($resetAnswer), PASSWORD_DEFAULT),
-            ]);
+        $emailSql = mysqli_real_escape_string(db(), $email);
+        $existingUser = db_fetch_one("SELECT user_id FROM users WHERE user_email = '$emailSql' LIMIT 1");
 
+        if ($existingUser) {
+            $errors[] = 'Użytkownik z tym adresem e-mail już istnieje.';
+        }
+    }
+
+    if (!$errors) {
+        $passwordHash = password_hash($password, PASSWORD_DEFAULT);
+        $resetAnswerHash = password_hash(strtolower($resetAnswer), PASSWORD_DEFAULT);
+        $nameSql = mysqli_real_escape_string(db(), $name);
+        $passwordHashSql = mysqli_real_escape_string(db(), $passwordHash);
+        $resetQuestionSql = mysqli_real_escape_string(db(), $resetQuestion);
+        $resetAnswerHashSql = mysqli_real_escape_string(db(), $resetAnswerHash);
+
+        $sql = 'INSERT INTO users
+                (user_fullname, user_email, user_passwordhash, reset_question, reset_answer_hash)
+                VALUES (' .
+                    "'$nameSql', '$emailSql', '$passwordHashSql', '$resetQuestionSql', '$resetAnswerHashSql'" .
+                ')';
+        $result = mysqli_query(db(), $sql);
+
+        if ($result) {
             header('Location: login.php?registered=1');
             exit;
-        } catch (PDOException $e) {
-            if ($e->getCode() === '23000') {
-                $errors[] = 'Użytkownik z tym adresem e-mail już istnieje.';
-            } else {
-                $errors[] = 'Wystąpił błąd podczas rejestracji.';
-            }
         }
+
+        $errors[] = 'Błąd: ' . $sql . ' ' . mysqli_error(db());
     }
 }
 ?>

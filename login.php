@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 require_once __DIR__ . '/config.php';
 start_session();
 
@@ -20,35 +20,38 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if (!$errors) {
-        $stmt = db()->prepare('SELECT * FROM users WHERE user_email = :email LIMIT 1');
-        $stmt->execute([':email' => $email]);
-        $user = $stmt->fetch();
-        $success = $user && password_verify($password, $user['user_passwordhash']);
-    }
+        try {
+            $userEmail = mysqli_real_escape_string(db(), $email);
+            $user = db_fetch_one("SELECT * FROM users WHERE user_email = '$userEmail' LIMIT 1");
+            $success = $user && password_verify($password, $user['user_passwordhash']);
 
-    $attemptEmail = $email !== '' ? substr($email, 0, 128) : '(brak)';
+            $attemptEmail = $email !== '' ? substr($email, 0, 128) : '(brak)';
+            $attemptUserId = isset($user['user_id']) ? (int) $user['user_id'] : 'NULL';
+            $attemptEmail = mysqli_real_escape_string(db(), $attemptEmail);
+            $wasSuccessful = $success ? 1 : 0;
+            $clientIp = mysqli_real_escape_string(db(), $_SERVER['REMOTE_ADDR'] ?? 'unknown');
 
-    $stmt = db()->prepare(
-        'INSERT INTO login_attempts (user_id, email, was_successful, client_ip)
-         VALUES (:user_id, :email, :was_successful, :client_ip)'
-    );
-    $stmt->execute([
-        ':user_id' => $user['user_id'] ?? null,
-        ':email' => $attemptEmail,
-        ':was_successful' => $success ? 1 : 0,
-        ':client_ip' => $_SERVER['REMOTE_ADDR'] ?? 'unknown',
-    ]);
+            $sql = 'INSERT INTO login_attempts (user_id, email, was_successful, client_ip)
+                    VALUES (' . $attemptUserId . ", '$attemptEmail', $wasSuccessful, '$clientIp')";
 
-    if ($success) {
-        session_regenerate_id(true);
-        $_SESSION['current_user'] = $user['user_id'];
-        $_SESSION['current_username'] = $user['user_fullname'];
-        header('Location: dashboard.php');
-        exit;
-    }
+            if (!mysqli_query(db(), $sql)) {
+                $errors[] = 'Błąd: ' . $sql . ' ' . mysqli_error(db());
+            }
 
-    if (!$errors) {
-        $errors[] = 'Błędny e-mail lub hasło.';
+            if ($success && !$errors) {
+                session_regenerate_id(true);
+                $_SESSION['current_user'] = $user['user_id'];
+                $_SESSION['current_username'] = $user['user_fullname'];
+                header('Location: dashboard.php');
+                exit;
+            }
+
+            if (!$errors) {
+                $errors[] = 'Błędny e-mail lub hasło.';
+            }
+        } catch (mysqli_sql_exception $exception) {
+            $errors[] = 'Nie udało się połączyć z bazą danych. Sprawdź, czy MySQL jest uruchomiony.';
+        }
     }
 }
 ?>

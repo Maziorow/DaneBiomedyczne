@@ -1,23 +1,46 @@
-﻿<?php
-const DB_HOST = 'mysql.agh.edu.pl';
-const DB_NAME = 'mateusz5';
-const DB_USER = 'mateusz5';
-const DB_PASS = '6n02QzScDB0j4gCk';
+<?php
 
-function db(): PDO
+const DB_HOST = 'localhost';
+const DB_NAME = 'dane_biomedyczne';
+const DB_USER = 'root';
+const DB_PASS = '';
+
+function db(): mysqli
 {
-    static $pdo = null;
+    static $connection = null;
 
-    if ($pdo === null) {
-        $dsn = 'mysql:host=' . DB_HOST . ';dbname=' . DB_NAME . ';charset=utf8mb4';
-        $pdo = new PDO($dsn, DB_USER, DB_PASS, [
-            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-            PDO::ATTR_EMULATE_PREPARES => false,
-        ]);
+    if ($connection === null) {
+        $connection = mysqli_connect(DB_HOST, DB_USER, DB_PASS, DB_NAME);
+        if (!$connection) {
+            throw new mysqli_sql_exception('Nie udało się połączyć z bazą danych: ' . mysqli_connect_error());
+        }
+
+        mysqli_set_charset($connection, 'utf8mb4');
     }
 
-    return $pdo;
+    return $connection;
+}
+
+function db_fetch_all(string $sql): array
+{
+    $result = mysqli_query(db(), $sql);
+    if (!$result) {
+        return [];
+    }
+
+    return mysqli_fetch_all($result, MYSQLI_ASSOC);
+}
+
+function db_fetch_one(string $sql): ?array
+{
+    $result = mysqli_query(db(), $sql);
+    if (!$result) {
+        return null;
+    }
+
+    $row = mysqli_fetch_assoc($result);
+
+    return $row ?: null;
 }
 
 function e(string $value): string
@@ -48,108 +71,99 @@ function require_login(): void
 
 function get_measurement_types(): array
 {
-    $stmt = db()->query(
+    return db_fetch_all(
         'SELECT mt.*, bu.unit_symbol, u.user_fullname AS creator_name
          FROM measurement_types mt
          JOIN biomedical_units bu ON bu.unit_id = mt.unit_id
          LEFT JOIN users u ON u.user_id = mt.created_by_user_id
          ORDER BY mt.type_id'
     );
-
-    return $stmt->fetchAll();
 }
 
 function get_measurement_type(int $typeId): ?array
 {
-    $stmt = db()->prepare(
+    $typeId = (int) $typeId;
+
+    return db_fetch_one(
         'SELECT mt.*, bu.unit_symbol, u.user_fullname AS creator_name
          FROM measurement_types mt
          JOIN biomedical_units bu ON bu.unit_id = mt.unit_id
          LEFT JOIN users u ON u.user_id = mt.created_by_user_id
-         WHERE mt.type_id = :id'
+         WHERE mt.type_id = ' . $typeId
     );
-    $stmt->execute([':id' => $typeId]);
-    $type = $stmt->fetch();
-
-    return $type ?: null;
 }
 
-function save_measurement(int $userId, int $typeId, string $valuePrimary, string $measuredAt): void
+function save_measurement(int $userId, int $typeId, string $valuePrimary, string $measuredAt): bool
 {
-    $stmt = db()->prepare(
+    $userId = (int) $userId;
+    $typeId = (int) $typeId;
+    $valuePrimary = mysqli_real_escape_string(db(), $valuePrimary);
+    $measuredAt = mysqli_real_escape_string(db(), $measuredAt);
+
+    return mysqli_query(
+        db(),
         'INSERT INTO measurements (user_id, type_id, value_primary, measured_at)
-         VALUES (:user_id, :type_id, :value_primary, :measured_at)'
+         VALUES (' . $userId . ', ' . $typeId . ", '$valuePrimary', '$measuredAt')"
     );
-    $stmt->execute([
-        ':user_id' => $userId,
-        ':type_id' => $typeId,
-        ':value_primary' => $valuePrimary,
-        ':measured_at' => $measuredAt,
-    ]);
 }
 
 function get_norm_for_type(int $typeId, ?int $userId = null): ?array
 {
+    $typeId = (int) $typeId;
+
     if ($userId !== null) {
-        $stmt = db()->prepare(
+        $userId = (int) $userId;
+
+        return db_fetch_one(
             'SELECT *
              FROM measurement_norms
-             WHERE type_id = :type_id
-               AND (created_by_user_id = :user_id_filter OR created_by_user_id IS NULL)
-             ORDER BY CASE WHEN created_by_user_id = :user_id_order THEN 0 ELSE 1 END, norm_id DESC
+             WHERE type_id = ' . $typeId . '
+               AND (created_by_user_id = ' . $userId . ' OR created_by_user_id IS NULL)
+             ORDER BY CASE WHEN created_by_user_id = ' . $userId . ' THEN 0 ELSE 1 END, norm_id DESC
              LIMIT 1'
         );
-        $stmt->execute([
-            ':type_id' => $typeId,
-            ':user_id_filter' => $userId,
-            ':user_id_order' => $userId,
-        ]);
-    } else {
-        $stmt = db()->prepare(
-            'SELECT *
-             FROM measurement_norms
-             WHERE type_id = :type_id AND created_by_user_id IS NULL
-             ORDER BY norm_id DESC
-             LIMIT 1'
-        );
-        $stmt->execute([':type_id' => $typeId]);
     }
 
-    $norm = $stmt->fetch();
-
-    return $norm ?: null;
+    return db_fetch_one(
+        'SELECT *
+             FROM measurement_norms
+             WHERE type_id = ' . $typeId . ' AND created_by_user_id IS NULL
+             ORDER BY norm_id DESC
+             LIMIT 1'
+    );
 }
 
-function save_user_norm(int $typeId, int $userId, ?string $minValue, ?string $maxValue, string $source): void
+function save_user_norm(int $typeId, int $userId, ?string $minValue, ?string $maxValue, string $source): bool
 {
     $minValue = $minValue !== null && trim($minValue) !== '' ? trim($minValue) : null;
     $maxValue = $maxValue !== null && trim($maxValue) !== '' ? trim($maxValue) : null;
     $source = trim($source);
 
-    $stmt = db()->prepare(
+    $typeId = (int) $typeId;
+    $userId = (int) $userId;
+    $deleted = mysqli_query(
+        db(),
         'DELETE FROM measurement_norms
-         WHERE type_id = :type_id AND created_by_user_id = :user_id'
+         WHERE type_id = ' . $typeId . ' AND created_by_user_id = ' . $userId
     );
-    $stmt->execute([
-        ':type_id' => $typeId,
-        ':user_id' => $userId,
-    ]);
 
-    if ($minValue === null && $maxValue === null) {
-        return;
+    if (!$deleted) {
+        return false;
     }
 
-    $stmt = db()->prepare(
+    if ($minValue === null && $maxValue === null) {
+        return true;
+    }
+
+    $minSql = $minValue !== null ? "'" . mysqli_real_escape_string(db(), $minValue) . "'" : 'NULL';
+    $maxSql = $maxValue !== null ? "'" . mysqli_real_escape_string(db(), $maxValue) . "'" : 'NULL';
+    $sourceSql = $source !== '' ? "'" . mysqli_real_escape_string(db(), $source) . "'" : 'NULL';
+
+    return mysqli_query(
+        db(),
         'INSERT INTO measurement_norms (type_id, min_value, max_value, source, created_by_user_id)
-         VALUES (:type_id, :min_value, :max_value, :source, :user_id)'
+         VALUES (' . $typeId . ', ' . $minSql . ', ' . $maxSql . ', ' . $sourceSql . ', ' . $userId . ')'
     );
-    $stmt->execute([
-        ':type_id' => $typeId,
-        ':min_value' => $minValue,
-        ':max_value' => $maxValue,
-        ':source' => $source !== '' ? $source : null,
-        ':user_id' => $userId,
-    ]);
 }
 
 function measurement_norm_status(string $value, ?array $norm): array
