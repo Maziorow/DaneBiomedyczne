@@ -11,7 +11,7 @@ if (isset($_GET['edit_id'])) {
     $editType = get_measurement_type((int) $_GET['edit_id']);
 }
 
-$units = db()->query('SELECT * FROM biomedical_units ORDER BY unit_id')->fetchAll();
+$units = db_fetch_all('SELECT * FROM biomedical_units ORDER BY unit_id');
 $unitIds = array_map('intval', array_column($units, 'unit_id'));
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -34,13 +34,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if (!$errors && $action === 'create') {
-        $stmt = db()->prepare(
+        $row = db_fetch_one(
             'SELECT COUNT(*) AS count_types
              FROM measurement_types
-             WHERE created_by_user_id = :user_id'
+             WHERE created_by_user_id = ' . $currentUserId
         );
-        $stmt->execute([':user_id' => $currentUserId]);
-        $createdCount = (int) $stmt->fetch()['count_types'];
+        $createdCount = (int) $row['count_types'];
 
         if ($createdCount >= 5) {
             $errors[] = 'Nie możesz utworzyć więcej niż 5 własnych pozycji katalogowych.';
@@ -48,50 +47,38 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if (!$errors) {
-        try {
-            if ($action === 'update' && $typeId > 0) {
-                $stmt = db()->prepare(
-                    'UPDATE measurement_types
-                     SET type_name = :type_name,
-                         type_slug = :type_slug,
-                         unit_id = :unit_id,
-                         has_second_value = 0,
-                         value_label = :value_label,
-                         second_value_label = NULL
-                     WHERE type_id = :type_id'
-                );
-                $stmt->execute([
-                    ':type_name' => $typeName,
-                    ':type_slug' => make_slug($typeName),
-                    ':unit_id' => $unitId,
-                    ':value_label' => $valueLabel,
-                    ':type_id' => $typeId,
-                ]);
+        $typeNameSql = mysqli_real_escape_string(db(), $typeName);
+        $typeSlugSql = mysqli_real_escape_string(db(), make_slug($typeName));
+        $valueLabelSql = mysqli_real_escape_string(db(), $valueLabel);
+
+        if ($action === 'update' && $typeId > 0) {
+            $sql = "UPDATE measurement_types
+                    SET type_name = '$typeNameSql',
+                        type_slug = '$typeSlugSql',
+                        unit_id = $unitId,
+                        has_second_value = 0,
+                        value_label = '$valueLabelSql',
+                        second_value_label = NULL
+                    WHERE type_id = $typeId";
+            $result = mysqli_query(db(), $sql);
+
+            if ($result) {
                 header('Location: measurement_types.php?updated=1');
                 exit;
             }
+        } else {
+            $sql = "INSERT INTO measurement_types
+                    (type_name, type_slug, unit_id, has_second_value, value_label, second_value_label, created_by_user_id)
+                    VALUES ('$typeNameSql', '$typeSlugSql', $unitId, 0, '$valueLabelSql', NULL, $currentUserId)";
+            $result = mysqli_query(db(), $sql);
 
-            $stmt = db()->prepare(
-                'INSERT INTO measurement_types
-                 (type_name, type_slug, unit_id, has_second_value, value_label, second_value_label, created_by_user_id)
-                 VALUES (:type_name, :type_slug, :unit_id, 0, :value_label, NULL, :created_by_user_id)'
-            );
-            $stmt->execute([
-                ':type_name' => $typeName,
-                ':type_slug' => make_slug($typeName),
-                ':unit_id' => $unitId,
-                ':value_label' => $valueLabel,
-                ':created_by_user_id' => $currentUserId,
-            ]);
-            header('Location: measurement_types.php?added=1');
-            exit;
-        } catch (PDOException $e) {
-            if ($e->getCode() === '23000') {
-                $errors[] = 'Badanie o takiej nazwie już istnieje.';
-            } else {
-                $errors[] = 'Wystąpił błąd podczas zapisu badania.';
+            if ($result) {
+                header('Location: measurement_types.php?added=1');
+                exit;
             }
         }
+
+        $errors[] = 'Błąd: ' . $sql . ' ' . mysqli_error(db());
     }
 }
 
@@ -103,7 +90,7 @@ if (isset($_GET['updated'])) {
 }
 
 if (isset($_GET['norm_updated'])) {
-    $success = 'Norma zostala zaktualizowana.';
+    $success = 'Norma została zaktualizowana.';
 }
 
 $types = get_measurement_types();

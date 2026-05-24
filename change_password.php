@@ -23,23 +23,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if (!$errors) {
-        $stmt = db()->prepare('SELECT user_passwordhash FROM users WHERE user_id = :user_id LIMIT 1');
-        $stmt->execute([':user_id' => $_SESSION['current_user']]);
-        $user = $stmt->fetch();
+        $currentUserId = (int) $_SESSION['current_user'];
+        $user = db_fetch_one(
+            'SELECT user_passwordhash FROM users WHERE user_id = ' . $currentUserId . ' LIMIT 1'
+        );
 
         if (!$user || !password_verify($oldPassword, $user['user_passwordhash'])) {
             $errors[] = 'Aktualne hasło jest niepoprawne.';
         } else {
-            $stmt = db()->prepare(
-                'UPDATE users
-                 SET user_passwordhash = :password_hash
-                 WHERE user_id = :user_id'
-            );
-            $stmt->execute([
-                ':password_hash' => password_hash($newPassword, PASSWORD_DEFAULT),
-                ':user_id' => $_SESSION['current_user'],
-            ]);
-            $success = true;
+            $passwordHash = password_hash($newPassword, PASSWORD_DEFAULT);
+            $passwordHash = mysqli_real_escape_string(db(), $passwordHash);
+            $sql = 'UPDATE users
+                    SET user_passwordhash = \'' . $passwordHash . '\'
+                    WHERE user_id = ' . $currentUserId;
+
+            if (mysqli_query(db(), $sql)) {
+                $success = true;
+            } else {
+                $errors[] = 'Błąd: ' . $sql . ' ' . mysqli_error(db());
+            }
         }
     }
 }

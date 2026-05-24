@@ -15,14 +15,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if (!$errors) {
-        $stmt = db()->prepare(
+        $emailForSql = mysqli_real_escape_string(db(), $email);
+        $userForReset = db_fetch_one(
             'SELECT user_id, user_email, reset_question, reset_answer_hash
              FROM users
-             WHERE user_email = :email
+             WHERE user_email = \'' . $emailForSql . '\'
              LIMIT 1'
         );
-        $stmt->execute([':email' => $email]);
-        $userForReset = $stmt->fetch();
 
         if (!$userForReset) {
             $errors[] = 'Nie znaleziono konta z takim adresem e-mail.';
@@ -51,18 +50,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         if (!$errors) {
-            $stmt = db()->prepare(
-                'UPDATE users
-                 SET user_passwordhash = :password_hash
-                 WHERE user_id = :user_id'
-            );
-            $stmt->execute([
-                ':password_hash' => password_hash($newPassword, PASSWORD_DEFAULT),
-                ':user_id' => $userForReset['user_id'],
-            ]);
+            $passwordHash = password_hash($newPassword, PASSWORD_DEFAULT);
+            $passwordHash = mysqli_real_escape_string(db(), $passwordHash);
+            $userId = (int) $userForReset['user_id'];
+            $sql = 'UPDATE users
+                    SET user_passwordhash = \'' . $passwordHash . '\'
+                    WHERE user_id = ' . $userId;
 
-            header('Location: login.php?reset=1');
-            exit;
+            if (mysqli_query(db(), $sql)) {
+                header('Location: login.php?reset=1');
+                exit;
+            }
+
+            $errors[] = 'Błąd: ' . $sql . ' ' . mysqli_error(db());
         }
     }
 }

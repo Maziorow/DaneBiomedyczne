@@ -25,25 +25,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if (!$errors) {
-        save_measurement((int) $_SESSION['current_user'], $typeId, $valuePrimary, $date->format('Y-m-d H:i:s'));
-        header('Location: dashboard.php?added=1');
-        exit;
+        if (save_measurement((int) $_SESSION['current_user'], $typeId, $valuePrimary, $date->format('Y-m-d H:i:s'))) {
+            header('Location: dashboard.php?added=1');
+            exit;
+        }
+
+        $errors[] = 'Błąd zapisu pomiaru: ' . mysqli_error(db());
     }
 }
 
-$units = db()->query('SELECT * FROM biomedical_units ORDER BY unit_id')->fetchAll();
+$units = db_fetch_all('SELECT * FROM biomedical_units ORDER BY unit_id');
 
-$stmt = db()->prepare(
+$measurements = db_fetch_all(
     'SELECT m.*, mt.type_name, mt.has_second_value, bu.unit_symbol
      FROM measurements m
      JOIN measurement_types mt ON mt.type_id = m.type_id
      JOIN biomedical_units bu ON bu.unit_id = mt.unit_id
-     WHERE m.user_id = :user_id
+     WHERE m.user_id = ' . (int) $_SESSION['current_user'] . '
      ORDER BY m.measured_at DESC
      LIMIT 10'
 );
-$stmt->execute([':user_id' => $_SESSION['current_user']]);
-$measurements = $stmt->fetchAll();
 ?>
 <!doctype html>
 <html lang="pl">
