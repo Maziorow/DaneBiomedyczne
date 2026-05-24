@@ -2,7 +2,7 @@
 const DB_HOST = 'mysql.agh.edu.pl';
 const DB_NAME = 'mateusz5';
 const DB_USER = 'mateusz5';
-const DB_PASS = 'V0Mn4JuL3iZMwaUR';
+const DB_PASS = '6n02QzScDB0j4gCk';
 
 function db(): PDO
 {
