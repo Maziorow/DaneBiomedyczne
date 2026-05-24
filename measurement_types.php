@@ -102,6 +102,10 @@ if (isset($_GET['updated'])) {
     $success = 'Badanie zostało zaktualizowane.';
 }
 
+if (isset($_GET['norm_updated'])) {
+    $success = 'Norma zostala zaktualizowana.';
+}
+
 $types = get_measurement_types();
 ?>
 <!doctype html>
@@ -165,14 +169,19 @@ $types = get_measurement_types();
     <section class="card">
         <h2>Lista badań</h2>
         <table>
-            <thead><tr><th>Nazwa</th><th>Jednostka</th><th>Autor</th><th>Edycja</th></tr></thead>
+            <thead><tr><th>Nazwa</th><th>Jednostka</th><th>Norma</th><th>Autor</th><th>Akcje</th></tr></thead>
             <tbody>
             <?php foreach ($types as $type): ?>
+                <?php $typeNorm = get_norm_for_type((int) $type['type_id'], $currentUserId); ?>
                 <tr>
                     <td><?= e($type['type_name']) ?></td>
                     <td><?= e($type['unit_symbol']) ?></td>
+                    <td><?= format_norm($typeNorm, $type['unit_symbol']) ?></td>
                     <td><?= e($type['creator_name'] ?? 'System') ?></td>
-                    <td><a href="measurement_types.php?edit_id=<?= e((string) $type['type_id']) ?>">Edytuj</a></td>
+                    <td class="actions">
+                        <a href="measurement_types.php?edit_id=<?= e((string) $type['type_id']) ?>">Edytuj</a>
+                        <a href="measurement_norm.php?type_id=<?= e((string) $type['type_id']) ?>">Norma</a>
+                    </td>
                 </tr>
             <?php endforeach; ?>
             </tbody>
