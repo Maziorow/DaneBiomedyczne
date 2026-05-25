@@ -18,8 +18,8 @@ start_session();
 <main>
     <section class="card">
         <?php if (isset($_SESSION['current_user'])): ?>
-            <h2>Witaj, <?= e($_SESSION['current_username'] ?? 'użytkowniku') ?></h2>
-            <p>Jesteś zalogowany jako użytkownik ID: <?= e((string) $_SESSION['current_user']) ?>.</p>
+            <h2>Witaj, <?= $_SESSION['current_username'] ?? 'użytkowniku' ?></h2>
+            <p>Jesteś zalogowany jako użytkownik ID: <?= (string) $_SESSION['current_user'] ?>.</p>
             <nav>
                 <a href="dashboard.php">Panel pomiarów</a>
                 <a href="change_password.php">Zmień hasło</a>

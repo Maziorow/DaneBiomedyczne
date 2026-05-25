@@ -43,11 +43,6 @@ function db_fetch_one(string $sql): ?array
     return $row ?: null;
 }
 
-function e(string $value): string
-{
-    return htmlspecialchars($value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
-}
-
 function start_session(): void
 {
     if (!headers_sent()) {
@@ -197,15 +192,15 @@ function format_norm(?array $norm, string $unitSymbol): string
     $max = $norm['max_value'];
 
     if ($min !== null && $max !== null) {
-        return e($min) . ' - ' . e($max) . ' ' . e($unitSymbol);
+        return $min . ' - ' . $max . ' ' . $unitSymbol;
     }
 
     if ($min !== null) {
-        return 'od ' . e($min) . ' ' . e($unitSymbol);
+        return 'od ' . $min . ' ' . $unitSymbol;
     }
 
     if ($max !== null) {
-        return 'do ' . e($max) . ' ' . e($unitSymbol);
+        return 'do ' . $max . ' ' . $unitSymbol;
     }
 
     return 'Brak normy';
@@ -213,20 +208,5 @@ function format_norm(?array $norm, string $unitSymbol): string
 
 function format_value(array $row): string
 {
-    return e($row['value_primary']) . ' ' . e($row['unit_symbol']);
-}
-
-function make_slug(string $text): string
-{
-    $text = strtr($text, [
-        'ą' => 'a', 'ć' => 'c', 'ę' => 'e', 'ł' => 'l', 'ń' => 'n',
-        'ó' => 'o', 'ś' => 's', 'ż' => 'z', 'ź' => 'z',
-        'Ą' => 'a', 'Ć' => 'c', 'Ę' => 'e', 'Ł' => 'l', 'Ń' => 'n',
-        'Ó' => 'o', 'Ś' => 's', 'Ż' => 'z', 'Ź' => 'z',
-    ]);
-    $text = strtolower($text);
-    $text = preg_replace('/[^a-z0-9]+/', '-', $text);
-    $text = trim($text, '-');
-
-    return $text !== '' ? $text : 'badanie';
+    return $row['value_primary'] . ' ' . $row['unit_symbol'];
 }

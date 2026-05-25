@@ -89,21 +89,21 @@ $units = db_fetch_all('SELECT * FROM biomedical_units ORDER BY unit_id');
         <h2><?= $editUnit ? 'Edytuj jednostkę' : 'Dodaj jednostkę' ?></h2>
 
         <?php if ($success): ?>
-            <p class="message success"><?= e($success) ?></p>
+            <p class="message success"><?= $success ?></p>
         <?php endif; ?>
         <?php foreach ($errors as $error): ?>
-            <p class="message error"><?= e($error) ?></p>
+            <p class="message error"><?= $error ?></p>
         <?php endforeach; ?>
 
         <form method="post" action="units.php">
             <input type="hidden" name="action" value="<?= $editUnit ? 'update' : 'create' ?>">
-            <input type="hidden" name="unit_id" value="<?= e((string) ($editUnit['unit_id'] ?? 0)) ?>">
+            <input type="hidden" name="unit_id" value="<?= (string) ($editUnit['unit_id'] ?? 0) ?>">
 
             <label for="unit_name">Nazwa jednostki</label>
-            <input type="text" id="unit_name" name="unit_name" value="<?= e($editUnit['unit_name'] ?? '') ?>" required>
+            <input type="text" id="unit_name" name="unit_name" value="<?= $editUnit['unit_name'] ?? '' ?>" required>
 
             <label for="unit_symbol">Symbol</label>
-            <input type="text" id="unit_symbol" name="unit_symbol" value="<?= e($editUnit['unit_symbol'] ?? '') ?>" required>
+            <input type="text" id="unit_symbol" name="unit_symbol" value="<?= $editUnit['unit_symbol'] ?? '' ?>" required>
 
             <button class="button" type="submit"><?= $editUnit ? 'Zapisz zmiany' : 'Dodaj jednostkę' ?></button>
             <?php if ($editUnit): ?>
@@ -119,9 +119,9 @@ $units = db_fetch_all('SELECT * FROM biomedical_units ORDER BY unit_id');
             <tbody>
             <?php foreach ($units as $unit): ?>
                 <tr>
-                    <td><?= e($unit['unit_name']) ?></td>
-                    <td><?= e($unit['unit_symbol']) ?></td>
-                    <td><a href="units.php?edit_id=<?= e((string) $unit['unit_id']) ?>">Edytuj</a></td>
+                    <td><?= $unit['unit_name'] ?></td>
+                    <td><?= $unit['unit_symbol'] ?></td>
+                    <td><a href="units.php?edit_id=<?= (string) $unit['unit_id'] ?>">Edytuj</a></td>
                 </tr>
             <?php endforeach; ?>
             </tbody>

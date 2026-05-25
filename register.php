@@ -80,21 +80,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <main>
     <section class="card">
         <?php foreach ($errors as $error): ?>
-            <p class="message error"><?= e($error) ?></p>
+            <p class="message error"><?= $error ?></p>
         <?php endforeach; ?>
 
         <form method="post" action="register.php">
             <label for="name">Imię i nazwisko</label>
-            <input type="text" id="name" name="name" value="<?= e($name) ?>" required>
+            <input type="text" id="name" name="name" value="<?= $name ?>" required>
 
             <label for="email">E-mail</label>
-            <input type="email" id="email" name="email" value="<?= e($email) ?>" required>
+            <input type="email" id="email" name="email" value="<?= $email ?>" required>
 
             <label for="password">Hasło</label>
             <input type="password" id="password" name="password" required minlength="8">
 
             <label for="reset_question">Pytanie pomocnicze do resetu hasła</label>
-            <input type="text" id="reset_question" name="reset_question" value="<?= e($resetQuestion) ?>" required>
+            <input type="text" id="reset_question" name="reset_question" value="<?= $resetQuestion ?>" required>
 
             <label for="reset_answer">Odpowiedź pomocnicza</label>
             <input type="password" id="reset_answer" name="reset_answer" required>

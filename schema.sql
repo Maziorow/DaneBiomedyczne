@@ -29,11 +29,8 @@ CREATE TABLE IF NOT EXISTS biomedical_units (
 CREATE TABLE IF NOT EXISTS measurement_types (
   type_id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
   type_name VARCHAR(120) NOT NULL,
-  type_slug VARCHAR(80) NOT NULL UNIQUE,
   unit_id INT UNSIGNED NOT NULL,
-  has_second_value TINYINT(1) NOT NULL DEFAULT 0,
   value_label VARCHAR(80) NOT NULL,
-  second_value_label VARCHAR(80) NULL,
   created_by_user_id INT UNSIGNED NULL,
   CONSTRAINT fk_measurement_types_unit
     FOREIGN KEY (unit_id) REFERENCES biomedical_units(unit_id),
@@ -82,18 +79,16 @@ ON DUPLICATE KEY UPDATE
   unit_symbol = VALUES(unit_symbol);
 
 INSERT INTO measurement_types
-  (type_id, type_name, type_slug, unit_id, has_second_value, value_label, second_value_label, created_by_user_id)
+  (type_id, type_name, unit_id, value_label, created_by_user_id)
 VALUES
-  (1, 'Temperatura ciała', 'temperatura-ciala', 1, 0, 'Temperatura', NULL, NULL),
-  (2, 'Ciśnienie krwi', 'cisnienie-krwi', 2, 0, 'Ciśnienie skurczowe', NULL, NULL),
-  (3, 'Waga', 'waga', 3, 0, 'Waga', NULL, NULL),
-  (4, 'Poziom witaminy D3', 'witamina-d3', 4, 0, 'Poziom witaminy D3', NULL, NULL)
+  (1, 'Temperatura ciała', 1, 'Temperatura', NULL),
+  (2, 'Ciśnienie krwi', 2, 'Ciśnienie skurczowe', NULL),
+  (3, 'Waga', 3, 'Waga', NULL),
+  (4, 'Poziom witaminy D3', 4, 'Poziom witaminy D3', NULL)
 ON DUPLICATE KEY UPDATE
   type_name = VALUES(type_name),
   unit_id = VALUES(unit_id),
-  has_second_value = VALUES(has_second_value),
-  value_label = VALUES(value_label),
-  second_value_label = VALUES(second_value_label);
+  value_label = VALUES(value_label);
 
 INSERT INTO measurement_norms (type_id, min_value, max_value, source, created_by_user_id)
 SELECT 1, 36.10, 37.20, 'Mayo Clinic: https://www.mayoclinic.org/first-aid/first-aid-fever/basics/art-20056685', NULL
