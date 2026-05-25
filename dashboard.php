@@ -37,7 +37,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 $units = db_fetch_all('SELECT * FROM biomedical_units ORDER BY unit_id');
 
 $measurements = db_fetch_all(
-    'SELECT m.*, mt.type_name, mt.has_second_value, bu.unit_symbol
+    'SELECT m.*, mt.type_name, bu.unit_symbol
      FROM measurements m
      JOIN measurement_types mt ON mt.type_id = m.type_id
      JOIN biomedical_units bu ON bu.unit_id = mt.unit_id
@@ -57,7 +57,7 @@ $measurements = db_fetch_all(
 <body>
 <header>
     <h1>Panel pomiarów</h1>
-    <p>Zalogowany użytkownik: <?= e($_SESSION['current_username'] ?? '') ?></p>
+    <p>Zalogowany użytkownik: <?= $_SESSION['current_username'] ?? '' ?></p>
 </header>
 <main>
     <section class="card">
@@ -76,15 +76,15 @@ $measurements = db_fetch_all(
             <p class="message success">Pomiar został zapisany.</p>
         <?php endif; ?>
         <?php foreach ($errors as $error): ?>
-            <p class="message error"><?= e($error) ?></p>
+            <p class="message error"><?= $error ?></p>
         <?php endforeach; ?>
 
         <form method="post" action="dashboard.php">
             <label for="type_id">Rodzaj pomiaru</label>
             <select id="type_id" name="type_id" required>
                 <?php foreach ($types as $type): ?>
-                    <option value="<?= e((string) $type['type_id']) ?>">
-                        <?= e($type['type_name']) ?> (<?= e($type['unit_symbol']) ?>)
+                    <option value="<?= (string) $type['type_id'] ?>">
+                        <?= $type['type_name'] ?> (<?= $type['unit_symbol'] ?>)
                     </option>
                 <?php endforeach; ?>
             </select>
@@ -93,7 +93,7 @@ $measurements = db_fetch_all(
             <input type="number" step="0.01" id="value_primary" name="value_primary" required>
 
             <label for="measured_at">Data i czas wykonania</label>
-            <input type="datetime-local" id="measured_at" name="measured_at" value="<?= e(date('Y-m-d\TH:i')) ?>" required>
+            <input type="datetime-local" id="measured_at" name="measured_at" value="<?= date('Y-m-d\TH:i') ?>" required>
 
             <button class="button" type="submit">Zapisz pomiar</button>
         </form>
@@ -105,7 +105,7 @@ $measurements = db_fetch_all(
             <thead><tr><th>Nazwa</th><th>Symbol</th></tr></thead>
             <tbody>
             <?php foreach ($units as $unit): ?>
-                <tr><td><?= e($unit['unit_name']) ?></td><td><?= e($unit['unit_symbol']) ?></td></tr>
+                <tr><td><?= $unit['unit_name'] ?></td><td><?= $unit['unit_symbol'] ?></td></tr>
             <?php endforeach; ?>
             </tbody>
         </table>
@@ -117,8 +117,8 @@ $measurements = db_fetch_all(
             <label for="catalog_type_id">Wybierz wielkość</label>
             <select id="catalog_type_id" name="type_id" required>
                 <?php foreach ($types as $type): ?>
-                    <option value="<?= e((string) $type['type_id']) ?>">
-                        <?= e($type['type_name']) ?> (<?= e($type['unit_symbol']) ?>)
+                    <option value="<?= (string) $type['type_id'] ?>">
+                        <?= $type['type_name'] ?> (<?= $type['unit_symbol'] ?>)
                     </option>
                 <?php endforeach; ?>
             </select>
@@ -130,9 +130,9 @@ $measurements = db_fetch_all(
             <tbody>
             <?php foreach ($types as $type): ?>
                 <tr>
-                    <td><?= e($type['type_name']) ?></td>
-                    <td><?= e($type['unit_symbol']) ?></td>
-                    <td><?= e($type['creator_name'] ?? 'System') ?></td>
+                    <td><?= $type['type_name'] ?></td>
+                    <td><?= $type['unit_symbol'] ?></td>
+                    <td><?= $type['creator_name'] ?? 'System' ?></td>
                 </tr>
             <?php endforeach; ?>
             </tbody>
@@ -149,9 +149,9 @@ $measurements = db_fetch_all(
                 <tbody>
                 <?php foreach ($measurements as $row): ?>
                     <tr>
-                        <td><?= e($row['type_name']) ?></td>
+                        <td><?= $row['type_name'] ?></td>
                         <td><?= format_value($row) ?></td>
-                        <td><?= e($row['measured_at']) ?></td>
+                        <td><?= $row['measured_at'] ?></td>
                     </tr>
                 <?php endforeach; ?>
                 </tbody>

@@ -80,15 +80,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <main>
     <section class="card">
         <?php foreach ($errors as $error): ?>
-            <p class="message error"><?= e($error) ?></p>
+            <p class="message error"><?= $error ?></p>
         <?php endforeach; ?>
 
         <?php if ($userForReset): ?>
             <form method="post" action="reset_password.php">
                 <input type="hidden" name="action" value="reset">
-                <input type="hidden" name="email" value="<?= e($email) ?>">
+                <input type="hidden" name="email" value="<?= $email ?>">
 
-                <p><strong>Pytanie pomocnicze:</strong> <?= e($userForReset['reset_question']) ?></p>
+                <p><strong>Pytanie pomocnicze:</strong> <?= $userForReset['reset_question'] ?></p>
 
                 <label for="reset_answer">Odpowiedź pomocnicza</label>
                 <input type="password" id="reset_answer" name="reset_answer" required>
@@ -107,7 +107,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <input type="hidden" name="action" value="lookup">
 
                 <label for="email">E-mail konta</label>
-                <input type="email" id="email" name="email" value="<?= e($email) ?>" required>
+                <input type="email" id="email" name="email" value="<?= $email ?>" required>
 
                 <button class="button" type="submit">Pokaż pytanie pomocnicze</button>
                 <a class="button secondary" href="login.php">Wróć do logowania</a>

@@ -57,7 +57,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <body>
 <header>
     <h1>Zmiana hasła</h1>
-    <p>Zalogowany użytkownik: <?= e($_SESSION['current_username'] ?? '') ?></p>
+    <p>Zalogowany użytkownik: <?= $_SESSION['current_username'] ?? '' ?></p>
 </header>
 <main>
     <section class="card">
@@ -74,7 +74,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <?php endif; ?>
 
         <?php foreach ($errors as $error): ?>
-            <p class="message error"><?= e($error) ?></p>
+            <p class="message error"><?= $error ?></p>
         <?php endforeach; ?>
 
         <form method="post" action="change_password.php">

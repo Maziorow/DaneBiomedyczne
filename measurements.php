@@ -95,7 +95,7 @@ if ($editMeasurement) {
 }
 
 $measurements = db_fetch_all(
-    'SELECT m.*, mt.type_name, mt.has_second_value, bu.unit_symbol
+    'SELECT m.*, mt.type_name, bu.unit_symbol
      FROM measurements m
      JOIN measurement_types mt ON mt.type_id = m.type_id
      JOIN biomedical_units bu ON bu.unit_id = mt.unit_id
@@ -161,12 +161,12 @@ if ($dateFrom !== '' || $dateTo !== '') {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= e($type['type_name']) ?></title>
+    <title><?= $type['type_name'] ?></title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 <header>
-    <h1><?= e($type['type_name']) ?></h1>
+    <h1><?= $type['type_name'] ?></h1>
     <p>Zapisy jednego parametru u zalogowanego użytkownika.</p>
 </header>
 <main>
@@ -190,27 +190,27 @@ if ($dateFrom !== '' || $dateTo !== '') {
             <p class="message success">Pomiar został usunięty.</p>
         <?php endif; ?>
         <?php foreach ($errors as $error): ?>
-            <p class="message error"><?= e($error) ?></p>
+            <p class="message error"><?= $error ?></p>
         <?php endforeach; ?>
 
         <form method="post" action="measurements.php">
-            <input type="hidden" name="type_id" value="<?= e((string) $typeId) ?>">
+            <input type="hidden" name="type_id" value="<?= (string) $typeId ?>">
             <input type="hidden" name="action" value="<?= $editMeasurement ? 'update' : 'create' ?>">
             <input type="hidden" name="measurement_id"
-                value="<?= e((string) ($editMeasurement['measurement_id'] ?? 0)) ?>">
+                value="<?= (string) ($editMeasurement['measurement_id'] ?? 0) ?>">
 
-            <label for="value_primary"><?= e($type['value_label']) ?> (<?= e($type['unit_symbol']) ?>)</label>
+            <label for="value_primary"><?= $type['value_label'] ?> (<?= $type['unit_symbol'] ?>)</label>
             <input type="number" step="0.01" id="value_primary" name="value_primary"
-                value="<?= e((string) ($valuePrimary ?? ($editMeasurement['value_primary'] ?? ''))) ?>" required>
+                value="<?= (string) ($valuePrimary ?? ($editMeasurement['value_primary'] ?? '')) ?>" required>
 
             <label for="measured_at">Data i czas wykonania</label>
         <input type="datetime-local" id="measured_at" name="measured_at"
-            value="<?= e($measuredAtInput ?? $measuredAtValue) ?>"
+            value="<?= $measuredAtInput ?? $measuredAtValue ?>"
             required>
 
             <button class="button" type="submit"><?= $editMeasurement ? 'Zapisz zmiany' : 'Zapisz' ?></button>
             <?php if ($editMeasurement): ?>
-                <a class="button secondary" href="measurements.php?type_id=<?= e((string) $typeId) ?>">Anuluj edycję</a>
+                <a class="button secondary" href="measurements.php?type_id=<?= (string) $typeId ?>">Anuluj edycję</a>
             <?php endif; ?>
         </form>
 </section>
@@ -218,17 +218,17 @@ if ($dateFrom !== '' || $dateTo !== '') {
     <section class="card">
         <h2>Statystyka</h2>
         <?php foreach ($statErrors as $error): ?>
-            <p class="message error"><?= e($error) ?></p>
+            <p class="message error"><?= $error ?></p>
         <?php endforeach; ?>
 
         <form method="get" action="measurements.php">
-            <input type="hidden" name="type_id" value="<?= e((string) $typeId) ?>">
+            <input type="hidden" name="type_id" value="<?= (string) $typeId ?>">
 
             <label for="date_from">Data od</label>
-            <input type="date" id="date_from" name="date_from" value="<?= e($dateFrom) ?>">
+            <input type="date" id="date_from" name="date_from" value="<?= $dateFrom ?>">
 
             <label for="date_to">Data do</label>
-            <input type="date" id="date_to" name="date_to" value="<?= e($dateTo) ?>">
+            <input type="date" id="date_to" name="date_to" value="<?= $dateTo ?>">
 
             <button class="button" type="submit">Pokaż statystykę</button>
         </form>
@@ -238,27 +238,27 @@ if ($dateFrom !== '' || $dateTo !== '') {
                 <tbody>
                     <tr>
                         <th>Liczba pomiarów</th>
-                        <td><?= e((string) $stats['count']) ?></td>
+                        <td><?= (string) $stats['count'] ?></td>
                     </tr>
                     <tr>
                         <th>Minimum</th>
-                        <td><?= e(number_format($stats['min'], 2)) ?>     <?= e($type['unit_symbol']) ?></td>
+                        <td><?= number_format($stats['min'], 2) ?>     <?= $type['unit_symbol'] ?></td>
                     </tr>
                     <tr>
                         <th>Maksimum</th>
-                        <td><?= e(number_format($stats['max'], 2)) ?>     <?= e($type['unit_symbol']) ?></td>
+                        <td><?= number_format($stats['max'], 2) ?>     <?= $type['unit_symbol'] ?></td>
                     </tr>
                     <tr>
                         <th>Srednia</th>
-                        <td><?= e(number_format($stats['avg'], 2)) ?>     <?= e($type['unit_symbol']) ?></td>
+                        <td><?= number_format($stats['avg'], 2) ?>     <?= $type['unit_symbol'] ?></td>
                     </tr>
                     <tr>
                         <th>Ponizej normy</th>
-                        <td><?= e((string) $stats['low']) ?></td>
+                        <td><?= (string) $stats['low'] ?></td>
                     </tr>
                     <tr>
                         <th>Powyzej normy</th>
-                        <td><?= e((string) $stats['high']) ?></td>
+                        <td><?= (string) $stats['high'] ?></td>
                     </tr>
                 </tbody>
             </table>
@@ -276,9 +276,9 @@ if ($dateFrom !== '' || $dateTo !== '') {
                         <?php foreach ($outsideRows as $row): ?>
                             <?php $rowStatus = measurement_norm_status($row['value_primary'], $norm); ?>
                             <tr>
-                                <td><?= e($row['value_primary']) ?>             <?= e($type['unit_symbol']) ?></td>
-                                <td><?= e($row['measured_at']) ?></td>
-                                <td><span class="status <?= e($rowStatus['class']) ?>"><?= e($rowStatus['label']) ?></span></td>
+                                <td><?= $row['value_primary'] ?>             <?= $type['unit_symbol'] ?></td>
+                                <td><?= $row['measured_at'] ?></td>
+                                <td><span class="status <?= $rowStatus['class'] ?>"><?= $rowStatus['label'] ?></span></td>
                             </tr>
                         <?php endforeach; ?>
                     </tbody>
@@ -309,13 +309,13 @@ if ($dateFrom !== '' || $dateTo !== '') {
                             <?php $status = measurement_norm_status($row['value_primary'], $norm); ?>
                             <tr>
                                 <td><?= format_value($row) ?></td>
-                                <td><?= e($row['measured_at']) ?></td>
+                                <td><?= $row['measured_at'] ?></td>
                                 <td><?= format_norm($norm, $type['unit_symbol']) ?></td>
-                                <td><span class="status <?= e($status['class']) ?>"><?= e($status['label']) ?></span></td>
+                                <td><span class="status <?= $status['class'] ?>"><?= $status['label'] ?></span></td>
                                 <td class="actions">
                                     <a
-                                        href="measurements.php?type_id=<?= e((string) $typeId) ?>&edit_id=<?= e((string) $row['measurement_id']) ?>">Edytuj</a>
-                                    <a href="measurements.php?type_id=<?= e((string) $typeId) ?>&delete_id=<?= e((string) $row['measurement_id']) ?>"
+                                        href="measurements.php?type_id=<?= (string) $typeId ?>&edit_id=<?= (string) $row['measurement_id'] ?>">Edytuj</a>
+                                    <a href="measurements.php?type_id=<?= (string) $typeId ?>&delete_id=<?= (string) $row['measurement_id'] ?>"
                                         onclick="return confirm('Usunac ten pomiar?');">Usun</a>
                                 </td>
                             </tr>

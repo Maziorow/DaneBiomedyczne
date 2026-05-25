@@ -55,13 +55,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <body>
 <header>
     <h1>Norma badania</h1>
-    <p><?= e($type['type_name']) ?> (<?= e($type['unit_symbol']) ?>)</p>
+    <p><?= $type['type_name'] ?> (<?= $type['unit_symbol'] ?>)</p>
 </header>
 <main>
     <section class="card">
         <nav>
             <a href="measurement_types.php">Katalog badań</a>
-            <a href="measurements.php?type_id=<?= e((string) $typeId) ?>">Zapisy pomiarów</a>
+            <a href="measurements.php?type_id=<?= (string) $typeId ?>">Zapisy pomiarów</a>
             <a class="secondary" href="logout.php">Wyloguj</a>
         </nav>
     </section>
@@ -70,20 +70,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <h2>Norma referencyjna</h2>
 
         <?php foreach ($errors as $error): ?>
-            <p class="message error"><?= e($error) ?></p>
+            <p class="message error"><?= $error ?></p>
         <?php endforeach; ?>
 
         <form method="post" action="measurement_norm.php">
-            <input type="hidden" name="type_id" value="<?= e((string) $typeId) ?>">
+            <input type="hidden" name="type_id" value="<?= (string) $typeId ?>">
 
             <label for="norm_min">Minimalna wartość normy</label>
-            <input type="number" step="0.01" id="norm_min" name="norm_min" value="<?= e((string) $normMin) ?>">
+            <input type="number" step="0.01" id="norm_min" name="norm_min" value="<?= (string) $normMin ?>">
 
             <label for="norm_max">Maksymalna wartość normy</label>
-            <input type="number" step="0.01" id="norm_max" name="norm_max" value="<?= e((string) $normMax) ?>">
+            <input type="number" step="0.01" id="norm_max" name="norm_max" value="<?= (string) $normMax ?>">
 
             <label for="norm_source">Źrodło normy</label>
-            <input type="text" id="norm_source" name="norm_source" value="<?= e((string) $normSource) ?>">
+            <input type="text" id="norm_source" name="norm_source" value="<?= (string) $normSource ?>">
 
             <button class="button" type="submit">Zapisz normę</button>
             <a class="button secondary" href="measurement_types.php">Anuluj</a>

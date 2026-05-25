@@ -75,12 +75,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <?php endif; ?>
 
         <?php foreach ($errors as $error): ?>
-            <p class="message error"><?= e($error) ?></p>
+            <p class="message error"><?= $error ?></p>
         <?php endforeach; ?>
 
         <form method="post" action="login.php">
             <label for="email">E-mail</label>
-            <input type="email" id="email" name="email" value="<?= e($email) ?>" required>
+            <input type="email" id="email" name="email" value="<?= $email ?>" required>
 
             <label for="password">Hasło</label>
             <input type="password" id="password" name="password" required>

@@ -48,17 +48,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if (!$errors) {
         $typeNameSql = mysqli_real_escape_string(db(), $typeName);
-        $typeSlugSql = mysqli_real_escape_string(db(), make_slug($typeName));
         $valueLabelSql = mysqli_real_escape_string(db(), $valueLabel);
 
         if ($action === 'update' && $typeId > 0) {
             $sql = "UPDATE measurement_types
                     SET type_name = '$typeNameSql',
-                        type_slug = '$typeSlugSql',
                         unit_id = $unitId,
-                        has_second_value = 0,
-                        value_label = '$valueLabelSql',
-                        second_value_label = NULL
+                        value_label = '$valueLabelSql'
                     WHERE type_id = $typeId";
             $result = mysqli_query(db(), $sql);
 
@@ -68,8 +64,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         } else {
             $sql = "INSERT INTO measurement_types
-                    (type_name, type_slug, unit_id, has_second_value, value_label, second_value_label, created_by_user_id)
-                    VALUES ('$typeNameSql', '$typeSlugSql', $unitId, 0, '$valueLabelSql', NULL, $currentUserId)";
+                    (type_name, unit_id, value_label, created_by_user_id)
+                    VALUES ('$typeNameSql', $unitId, '$valueLabelSql', $currentUserId)";
             $result = mysqli_query(db(), $sql);
 
             if ($result) {
@@ -121,30 +117,30 @@ $types = get_measurement_types();
         <h2><?= $editType ? 'Edytuj badanie' : 'Dodaj badanie' ?></h2>
 
         <?php if ($success): ?>
-            <p class="message success"><?= e($success) ?></p>
+            <p class="message success"><?= $success ?></p>
         <?php endif; ?>
         <?php foreach ($errors as $error): ?>
-            <p class="message error"><?= e($error) ?></p>
+            <p class="message error"><?= $error ?></p>
         <?php endforeach; ?>
 
         <form method="post" action="measurement_types.php">
             <input type="hidden" name="action" value="<?= $editType ? 'update' : 'create' ?>">
-            <input type="hidden" name="type_id" value="<?= e((string) ($editType['type_id'] ?? 0)) ?>">
+            <input type="hidden" name="type_id" value="<?= (string) ($editType['type_id'] ?? 0) ?>">
 
             <label for="type_name">Nazwa badania</label>
-            <input type="text" id="type_name" name="type_name" value="<?= e($editType['type_name'] ?? '') ?>" required>
+            <input type="text" id="type_name" name="type_name" value="<?= $editType['type_name'] ?? '' ?>" required>
 
             <label for="unit_id">Jednostka</label>
             <select id="unit_id" name="unit_id" required>
                 <?php foreach ($units as $unit): ?>
-                    <option value="<?= e((string) $unit['unit_id']) ?>" <?= isset($editType['unit_id']) && (int) $editType['unit_id'] === (int) $unit['unit_id'] ? 'selected' : '' ?>>
-                        <?= e($unit['unit_name']) ?> (<?= e($unit['unit_symbol']) ?>)
+                    <option value="<?= (string) $unit['unit_id'] ?>" <?= isset($editType['unit_id']) && (int) $editType['unit_id'] === (int) $unit['unit_id'] ? 'selected' : '' ?>>
+                        <?= $unit['unit_name'] ?> (<?= $unit['unit_symbol'] ?>)
                     </option>
                 <?php endforeach; ?>
             </select>
 
             <label for="value_label">Etykieta wartości</label>
-            <input type="text" id="value_label" name="value_label" value="<?= e($editType['value_label'] ?? '') ?>" required>
+            <input type="text" id="value_label" name="value_label" value="<?= $editType['value_label'] ?? '' ?>" required>
 
             <button class="button" type="submit"><?= $editType ? 'Zapisz zmiany' : 'Dodaj badanie' ?></button>
             <?php if ($editType): ?>
@@ -161,13 +157,13 @@ $types = get_measurement_types();
             <?php foreach ($types as $type): ?>
                 <?php $typeNorm = get_norm_for_type((int) $type['type_id'], $currentUserId); ?>
                 <tr>
-                    <td><?= e($type['type_name']) ?></td>
-                    <td><?= e($type['unit_symbol']) ?></td>
+                    <td><?= $type['type_name'] ?></td>
+                    <td><?= $type['unit_symbol'] ?></td>
                     <td><?= format_norm($typeNorm, $type['unit_symbol']) ?></td>
-                    <td><?= e($type['creator_name'] ?? 'System') ?></td>
+                    <td><?= $type['creator_name'] ?? 'System' ?></td>
                     <td class="actions">
-                        <a href="measurement_types.php?edit_id=<?= e((string) $type['type_id']) ?>">Edytuj</a>
-                        <a href="measurement_norm.php?type_id=<?= e((string) $type['type_id']) ?>">Norma</a>
+                        <a href="measurement_types.php?edit_id=<?= (string) $type['type_id'] ?>">Edytuj</a>
+                        <a href="measurement_norm.php?type_id=<?= (string) $type['type_id'] ?>">Norma</a>
                     </td>
                 </tr>
             <?php endforeach; ?>
